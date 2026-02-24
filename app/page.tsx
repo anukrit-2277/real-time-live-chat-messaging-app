@@ -1,22 +1,32 @@
 "use client";
 
+import { useState } from "react";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
-import { useConvexAuth, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { useEffect } from "react";
 import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
+import Sidebar from "@/components/Sidebar";
 
 export default function Home() {
   const { user, isLoaded, isSignedIn } = useUser();
-  const { isAuthenticated: isConvexAuthed } = useConvexAuth();
   const storeUser = useMutation(api.users.store);
 
-  // Sync user to Convex when authenticated
+  const [selectedConversation, setSelectedConversation] =
+    useState<Id<"conversations"> | null>(null);
+
+  // Sync user to Convex when signed in
   useEffect(() => {
-    if (!isConvexAuthed) {
+    if (!isSignedIn || !user) {
       return;
     }
-    storeUser();
-  }, [isConvexAuthed, storeUser]);
+    storeUser({
+      name: user.fullName ?? "Anonymous",
+      email: user.primaryEmailAddress?.emailAddress ?? "",
+      imageUrl: user.imageUrl ?? "",
+      tokenIdentifier: user.id,
+    });
+  }, [isSignedIn, user, storeUser]);
 
   // Wait for Clerk to load
   if (!isLoaded) {
@@ -45,6 +55,7 @@ export default function Home() {
   // Signed in
   return (
     <div className="flex h-screen flex-col">
+      {/* Header */}
       <header className="flex items-center justify-between border-b px-6 py-4">
         <h1 className="text-xl font-bold">LiveChat</h1>
         <div className="flex items-center gap-3">
@@ -55,11 +66,28 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="flex flex-1 items-center justify-center">
-        <p className="text-gray-500">
-          Welcome, {user?.firstName ?? "User"}! You are signed in.
-        </p>
-      </main>
+      {/* Main area: sidebar + chat */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar with user list */}
+        <Sidebar
+          currentUserTokenIdentifier={user.id}
+          onSelectConversation={setSelectedConversation}
+          selectedConversationId={selectedConversation}
+        />
+
+        {/* Chat area placeholder */}
+        <div className="flex flex-1 items-center justify-center bg-white">
+          {selectedConversation ? (
+            <p className="text-gray-500">
+              Conversation selected. Chat UI coming in Feature 3.
+            </p>
+          ) : (
+            <p className="text-gray-500">
+              Select a user to start chatting
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

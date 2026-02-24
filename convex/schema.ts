@@ -8,4 +8,8 @@ export default defineSchema({
         imageUrl: v.string(),
         tokenIdentifier: v.string(),
     }).index("by_token", ["tokenIdentifier"]),
+
+    conversations: defineTable({
+        participants: v.array(v.id("users")),
+    }),
 });

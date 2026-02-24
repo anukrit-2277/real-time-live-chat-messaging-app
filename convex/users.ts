@@ -1,34 +1,35 @@
+import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 // Called from the client when a user logs in.
-// Upserts the user record in the database.
+// Stores or updates the user record in the database.
 export const store = mutation({
-    args: {},
-    handler: async (ctx) => {
-        const identity = await ctx.auth.getUserIdentity();
-        if (!identity) {
-            throw new Error("Called storeUser without authentication present");
-        }
-
+    args: {
+        name: v.string(),
+        email: v.string(),
+        imageUrl: v.string(),
+        tokenIdentifier: v.string(),
+    },
+    handler: async (ctx, args) => {
         // Check if the user already exists
         const user = await ctx.db
             .query("users")
             .withIndex("by_token", (q) =>
-                q.eq("tokenIdentifier", identity.tokenIdentifier)
+                q.eq("tokenIdentifier", args.tokenIdentifier)
             )
             .unique();
 
         if (user !== null) {
             // Update name/email/image if they changed
             if (
-                user.name !== identity.name ||
-                user.email !== identity.email ||
-                user.imageUrl !== identity.pictureUrl
+                user.name !== args.name ||
+                user.email !== args.email ||
+                user.imageUrl !== args.imageUrl
             ) {
                 await ctx.db.patch(user._id, {
-                    name: identity.name ?? "Anonymous",
-                    email: identity.email ?? "",
-                    imageUrl: identity.pictureUrl ?? "",
+                    name: args.name,
+                    email: args.email,
+                    imageUrl: args.imageUrl,
                 });
             }
             return user._id;
@@ -36,18 +37,29 @@ export const store = mutation({
 
         // Create a new user record
         return await ctx.db.insert("users", {
-            name: identity.name ?? "Anonymous",
-            email: identity.email ?? "",
-            imageUrl: identity.pictureUrl ?? "",
-            tokenIdentifier: identity.tokenIdentifier,
+            name: args.name,
+            email: args.email,
+            imageUrl: args.imageUrl,
+            tokenIdentifier: args.tokenIdentifier,
         });
     },
 });
 
-// Returns all users so other users can discover them.
+// Returns all users.
 export const get = query({
     args: {},
     handler: async (ctx) => {
         return await ctx.db.query("users").collect();
+    },
+});
+
+// Returns all users except the one with the given tokenIdentifier.
+export const getExcludingMe = query({
+    args: { tokenIdentifier: v.string() },
+    handler: async (ctx, args) => {
+        const allUsers = await ctx.db.query("users").collect();
+        return allUsers.filter(
+            (u) => u.tokenIdentifier !== args.tokenIdentifier
+        );
     },
 });
