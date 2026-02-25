@@ -41,6 +41,7 @@ export const store = mutation({
             email: args.email,
             imageUrl: args.imageUrl,
             tokenIdentifier: args.tokenIdentifier,
+            lastSeen: Date.now(),
         });
     },
 });
@@ -54,13 +55,18 @@ export const get = query({
 });
 
 // Returns all users except the one with the given tokenIdentifier.
+// Includes isOnline status based on lastSeen within the last 60 seconds.
 export const getExcludingMe = query({
     args: { tokenIdentifier: v.string() },
     handler: async (ctx, args) => {
         const allUsers = await ctx.db.query("users").collect();
-        return allUsers.filter(
-            (u) => u.tokenIdentifier !== args.tokenIdentifier
-        );
+        const now = Date.now();
+        return allUsers
+            .filter((u) => u.tokenIdentifier !== args.tokenIdentifier)
+            .map((u) => ({
+                ...u,
+                isOnline: u.lastSeen ? now - u.lastSeen < 60000 : false,
+            }));
     },
 });
 
@@ -74,5 +80,23 @@ export const getCurrentUser = query({
                 q.eq("tokenIdentifier", args.tokenIdentifier)
             )
             .unique();
+    },
+});
+
+// Heartbeat: updates the user's lastSeen timestamp.
+// Called every 30 seconds from the client.
+export const heartbeat = mutation({
+    args: { tokenIdentifier: v.string() },
+    handler: async (ctx, args) => {
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_token", (q) =>
+                q.eq("tokenIdentifier", args.tokenIdentifier)
+            )
+            .unique();
+
+        if (user) {
+            await ctx.db.patch(user._id, { lastSeen: Date.now() });
+        }
     },
 });

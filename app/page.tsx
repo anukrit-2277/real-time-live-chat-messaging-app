@@ -9,6 +9,7 @@ import { Id } from "../convex/_generated/dataModel";
 import Sidebar from "@/components/Sidebar";
 import MessageList from "@/components/MessageList";
 import MessageInput from "@/components/MessageInput";
+import { useHeartbeat } from "@/hooks/useHeartbeat";
 
 export default function Home() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -23,13 +24,19 @@ export default function Home() {
     isSignedIn && user ? { tokenIdentifier: user.id } : "skip"
   );
 
-  // Get conversations to find the other user's name for the chat header
+  // Only fetch conversations after the user is stored in the database.
+  // This prevents a new user from briefly seeing stale/empty data.
   const conversations = useQuery(
     api.conversations.list,
-    isSignedIn && user ? { tokenIdentifier: user.id } : "skip"
+    isSignedIn && user && currentUser
+      ? { tokenIdentifier: user.id }
+      : "skip"
   );
 
   // Find the active conversation's other user name
+  // Send heartbeat while the app is open
+  useHeartbeat(isSignedIn && user ? user.id : undefined);
+
   const activeConversation = conversations?.find(
     (c) => c._id === selectedConversation
   );
@@ -130,23 +137,37 @@ export default function Home() {
               </svg>
             </button>
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {activeConversation?.otherUserImage ? (
-                <img
-                  src={activeConversation.otherUserImage}
-                  alt={activeConversation.otherUserName}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
-                />
-              ) : (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
-                >
-                  {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
-                </div>
-              )}
-              <h2 className="text-base font-semibold truncate" style={{ color: "#1E252B" }}>
-                {activeConversation?.otherUserName ?? "Chat"}
-              </h2>
+              <div className="relative flex-shrink-0">
+                {activeConversation?.otherUserImage ? (
+                  <img
+                    src={activeConversation.otherUserImage}
+                    alt={activeConversation.otherUserName}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
+                  />
+                ) : (
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
+                  >
+                    {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
+                  </div>
+                )}
+                {activeConversation?.otherUserIsOnline && (
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base font-semibold truncate" style={{ color: "#1E252B" }}>
+                  {activeConversation?.otherUserName ?? "Chat"}
+                </h2>
+                <p className="text-xs" style={{ color: activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8" }}>
+                  {activeConversation?.otherUserIsOnline
+                    ? "Online"
+                    : activeConversation?.otherUserLastSeen
+                      ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
+                      : "Offline"}
+                </p>
+              </div>
             </div>
             <UserButton afterSignOutUrl="/" />
           </div>
@@ -189,23 +210,37 @@ export default function Home() {
                 className="hidden md:flex items-center gap-3 px-6 py-3 border-b border-white/20"
                 style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(12px)" }}
               >
-                {activeConversation?.otherUserImage ? (
-                  <img
-                    src={activeConversation.otherUserImage}
-                    alt={activeConversation.otherUserName}
-                    className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
-                  />
-                ) : (
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white"
-                    style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
-                  >
-                    {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
-                  </div>
-                )}
-                <h2 className="text-base font-semibold" style={{ color: "#1E252B" }}>
-                  {activeConversation?.otherUserName ?? "Chat"}
-                </h2>
+                <div className="relative flex-shrink-0">
+                  {activeConversation?.otherUserImage ? (
+                    <img
+                      src={activeConversation.otherUserImage}
+                      alt={activeConversation.otherUserName}
+                      className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
+                    />
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white"
+                      style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
+                    >
+                      {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
+                    </div>
+                  )}
+                  {activeConversation?.otherUserIsOnline && (
+                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                  )}
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold" style={{ color: "#1E252B" }}>
+                    {activeConversation?.otherUserName ?? "Chat"}
+                  </h2>
+                  <p className="text-xs" style={{ color: activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8" }}>
+                    {activeConversation?.otherUserIsOnline
+                      ? "Online"
+                      : activeConversation?.otherUserLastSeen
+                        ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
+                        : "Offline"}
+                  </p>
+                </div>
               </div>
 
               <MessageList
@@ -241,4 +276,24 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+// Formats a lastSeen timestamp into a human-readable relative time
+function formatLastSeen(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }

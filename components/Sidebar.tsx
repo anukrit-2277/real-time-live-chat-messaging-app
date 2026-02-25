@@ -94,25 +94,32 @@ export default function Sidebar({
                                     className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left hover-lift mb-1"
                                     style={{ background: "rgba(255, 255, 255, 0.5)" }}
                                 >
-                                    {user.imageUrl ? (
-                                        <img
-                                            src={user.imageUrl}
-                                            alt={user.name}
-                                            className="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm"
-                                        />
-                                    ) : (
-                                        <div
-                                            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm"
-                                            style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
-                                        >
-                                            {user.name.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
+                                    <div className="relative flex-shrink-0">
+                                        {user.imageUrl ? (
+                                            <img
+                                                src={user.imageUrl}
+                                                alt={user.name}
+                                                className="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+                                            />
+                                        ) : (
+                                            <div
+                                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm"
+                                                style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
+                                            >
+                                                {user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        {user.isOnline && (
+                                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                                        )}
+                                    </div>
                                     <div className="min-w-0">
                                         <p className="text-sm font-semibold truncate" style={{ color: "#1E252B" }}>
                                             {user.name}
                                         </p>
-                                        <p className="text-xs truncate" style={{ color: "#64748B" }}>{user.email}</p>
+                                        <p className="text-xs truncate" style={{ color: user.isOnline ? "#22c55e" : "#64748B" }}>
+                                            {user.isOnline ? "Online" : user.email}
+                                        </p>
                                     </div>
                                 </button>
                             ))
@@ -159,25 +166,30 @@ export default function Sidebar({
                                                 : { background: "rgba(255, 255, 255, 0.5)" }
                                         }
                                     >
-                                        {conv.otherUserImage ? (
-                                            <img
-                                                src={conv.otherUserImage}
-                                                alt={conv.otherUserName}
-                                                className={`h-10 w-10 rounded-full object-cover shadow-sm ${isActive ? "ring-2 ring-white/50" : "ring-2 ring-white"
-                                                    }`}
-                                            />
-                                        ) : (
-                                            <div
-                                                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm"
-                                                style={{
-                                                    background: isActive
-                                                        ? "rgba(255,255,255,0.25)"
-                                                        : "linear-gradient(135deg, #3C91C5, #5A7D95)",
-                                                }}
-                                            >
-                                                {conv.otherUserName.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
+                                        <div className="relative flex-shrink-0">
+                                            {conv.otherUserImage ? (
+                                                <img
+                                                    src={conv.otherUserImage}
+                                                    alt={conv.otherUserName}
+                                                    className={`h-10 w-10 rounded-full object-cover shadow-sm ${isActive ? "ring-2 ring-white/50" : "ring-2 ring-white"
+                                                        }`}
+                                                />
+                                            ) : (
+                                                <div
+                                                    className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white shadow-sm"
+                                                    style={{
+                                                        background: isActive
+                                                            ? "rgba(255,255,255,0.25)"
+                                                            : "linear-gradient(135deg, #3C91C5, #5A7D95)",
+                                                    }}
+                                                >
+                                                    {conv.otherUserName.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            {conv.otherUserIsOnline && (
+                                                <span className={`absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ${isActive ? "border-2 border-blue-400" : "border-2 border-white"}`} />
+                                            )}
+                                        </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center justify-between">
                                                 <p
@@ -209,4 +221,24 @@ export default function Sidebar({
             </div>
         </div>
     );
+}
+
+// Formats a lastSeen timestamp into a human-readable relative time
+function formatLastSeen(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+
+    return new Date(timestamp).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
 }

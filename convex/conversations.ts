@@ -94,10 +94,14 @@ export const list = query({
 
                 const lastMessage = messages[0] ?? null;
 
+                const now = Date.now();
+
                 return {
                     _id: conv._id,
                     otherUserName: otherUser.name,
                     otherUserImage: otherUser.imageUrl,
+                    otherUserIsOnline: otherUser.lastSeen ? now - otherUser.lastSeen < 60000 : false,
+                    otherUserLastSeen: otherUser.lastSeen ?? null,
                     lastMessageBody: lastMessage?.body ?? null,
                     lastMessageTime: lastMessage?._creationTime ?? conv._creationTime,
                 };

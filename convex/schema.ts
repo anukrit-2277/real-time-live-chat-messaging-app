@@ -7,6 +7,7 @@ export default defineSchema({
         email: v.string(),
         imageUrl: v.string(),
         tokenIdentifier: v.string(),
+        lastSeen: v.optional(v.number()),
     }).index("by_token", ["tokenIdentifier"]),
 
     conversations: defineTable({
