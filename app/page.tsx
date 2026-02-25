@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect } from "react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import Sidebar from "@/components/Sidebar";
+import MessageList from "@/components/MessageList";
+import MessageInput from "@/components/MessageInput";
 
 export default function Home() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -14,6 +16,12 @@ export default function Home() {
 
   const [selectedConversation, setSelectedConversation] =
     useState<Id<"conversations"> | null>(null);
+
+  // Get the current user's Convex document (to get their _id)
+  const currentUser = useQuery(
+    api.users.getCurrentUser,
+    isSignedIn && user ? { tokenIdentifier: user.id } : "skip"
+  );
 
   // Sync user to Convex when signed in
   useEffect(() => {
@@ -68,23 +76,32 @@ export default function Home() {
 
       {/* Main area: sidebar + chat */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar with user list */}
+        {/* Sidebar */}
         <Sidebar
           currentUserTokenIdentifier={user.id}
           onSelectConversation={setSelectedConversation}
           selectedConversationId={selectedConversation}
         />
 
-        {/* Chat area placeholder */}
-        <div className="flex flex-1 items-center justify-center bg-white">
-          {selectedConversation ? (
-            <p className="text-gray-500">
-              Conversation selected. Chat UI coming in Feature 3.
-            </p>
+        {/* Chat area */}
+        <div className="flex flex-1 flex-col bg-white">
+          {selectedConversation && currentUser ? (
+            <>
+              <MessageList
+                conversationId={selectedConversation}
+                currentUserId={currentUser._id}
+              />
+              <MessageInput
+                conversationId={selectedConversation}
+                senderTokenIdentifier={user.id}
+              />
+            </>
           ) : (
-            <p className="text-gray-500">
-              Select a user to start chatting
-            </p>
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-gray-400">
+                Select a user to start chatting
+              </p>
+            </div>
           )}
         </div>
       </div>

@@ -63,3 +63,16 @@ export const getExcludingMe = query({
         );
     },
 });
+
+// Returns the current user's document.
+export const getCurrentUser = query({
+    args: { tokenIdentifier: v.string() },
+    handler: async (ctx, args) => {
+        return await ctx.db
+            .query("users")
+            .withIndex("by_token", (q) =>
+                q.eq("tokenIdentifier", args.tokenIdentifier)
+            )
+            .unique();
+    },
+});

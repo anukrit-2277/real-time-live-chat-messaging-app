@@ -45,7 +45,8 @@ export const createOrGet = mutation({
     },
 });
 
-// Returns all conversations the current user is part of.
+// Returns all conversations the current user is part of,
+// with the other participant's info and the last message preview.
 export const list = query({
     args: { tokenIdentifier: v.string() },
     handler: async (ctx, args) => {
@@ -62,8 +63,56 @@ export const list = query({
 
         const allConversations = await ctx.db.query("conversations").collect();
 
-        return allConversations.filter((conv) =>
+        const myConversations = allConversations.filter((conv) =>
             conv.participants.includes(currentUser._id)
         );
+
+        // For each conversation, get the other user's info and the last message
+        const conversationsWithDetails = await Promise.all(
+            myConversations.map(async (conv) => {
+                // Find the other participant
+                const otherUserId = conv.participants.find(
+                    (id) => id !== currentUser._id
+                );
+                const otherUser = otherUserId
+                    ? await ctx.db.get(otherUserId)
+                    : null;
+
+                // Skip conversations where the other user was deleted
+                if (!otherUser) {
+                    return null;
+                }
+
+                // Get the last message in this conversation
+                const messages = await ctx.db
+                    .query("messages")
+                    .withIndex("by_conversation", (q) =>
+                        q.eq("conversationId", conv._id)
+                    )
+                    .order("desc")
+                    .take(1);
+
+                const lastMessage = messages[0] ?? null;
+
+                return {
+                    _id: conv._id,
+                    otherUserName: otherUser.name,
+                    otherUserImage: otherUser.imageUrl,
+                    lastMessageBody: lastMessage?.body ?? null,
+                    lastMessageTime: lastMessage?._creationTime ?? conv._creationTime,
+                };
+            })
+        );
+
+        // Filter out null entries (deleted users) and sort by most recent
+        const validConversations = conversationsWithDetails.filter(
+            (c) => c !== null
+        );
+
+        validConversations.sort(
+            (a, b) => b.lastMessageTime - a.lastMessageTime
+        );
+
+        return validConversations;
     },
 });
