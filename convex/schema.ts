@@ -19,4 +19,22 @@ export default defineSchema({
         senderId: v.id("users"),
         body: v.string(),
     }).index("by_conversation", ["conversationId"]),
+
+    // Tracks who is currently typing in which conversation
+    typingStatus: defineTable({
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+        isTyping: v.boolean(),
+        lastTypedAt: v.number(),
+    })
+        .index("by_conversation", ["conversationId"])
+        .index("by_conversation_user", ["conversationId", "userId"]),
+
+    // Tracks when a user last read a conversation (for unread counts)
+    readStatus: defineTable({
+        conversationId: v.id("conversations"),
+        userId: v.id("users"),
+        lastReadTime: v.number(),
+    })
+        .index("by_conversation_user", ["conversationId", "userId"]),
 });

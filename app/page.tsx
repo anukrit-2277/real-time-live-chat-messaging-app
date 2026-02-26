@@ -14,9 +14,18 @@ import { useHeartbeat } from "@/hooks/useHeartbeat";
 export default function Home() {
   const { user, isLoaded, isSignedIn } = useUser();
   const storeUser = useMutation(api.users.store);
+  const markRead = useMutation(api.readStatus.markRead);
 
   const [selectedConversation, setSelectedConversation] =
     useState<Id<"conversations"> | null>(null);
+
+  // When a conversation is selected, mark it as read
+  const handleSelectConversation = (conversationId: Id<"conversations">) => {
+    setSelectedConversation(conversationId);
+    if (user) {
+      markRead({ conversationId, tokenIdentifier: user.id });
+    }
+  };
 
   // Get the current user's Convex document (to get their _id)
   const currentUser = useQuery(
@@ -57,6 +66,7 @@ export default function Home() {
   // Handle back button on mobile
   const handleBack = () => {
     setSelectedConversation(null);
+    // No need to mark read here -- it happens on select
   };
 
   // Wait for Clerk to load
@@ -185,7 +195,7 @@ export default function Home() {
         >
           <Sidebar
             currentUserTokenIdentifier={user.id}
-            onSelectConversation={setSelectedConversation}
+            onSelectConversation={handleSelectConversation}
             selectedConversationId={selectedConversation}
           />
         </div>
@@ -246,6 +256,7 @@ export default function Home() {
               <MessageList
                 conversationId={selectedConversation}
                 currentUserId={currentUser._id}
+                currentUserTokenIdentifier={user.id}
               />
               <MessageInput
                 conversationId={selectedConversation}

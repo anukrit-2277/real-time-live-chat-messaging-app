@@ -198,16 +198,26 @@ export default function Sidebar({
                                                 >
                                                     {conv.otherUserName}
                                                 </p>
-                                                <p
-                                                    className="text-xs flex-shrink-0 ml-2"
-                                                    style={{ color: isActive ? "rgba(255,255,255,0.7)" : "#94a3b8" }}
-                                                >
-                                                    {formatTimestamp(conv.lastMessageTime)}
-                                                </p>
+                                                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                                    <p
+                                                        className="text-xs"
+                                                        style={{ color: isActive ? "rgba(255,255,255,0.7)" : "#94a3b8" }}
+                                                    >
+                                                        {formatTimestamp(conv.lastMessageTime)}
+                                                    </p>
+                                                    {!isActive && conv.unreadCount > 0 && (
+                                                        <span
+                                                            className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-bold text-white"
+                                                            style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
+                                                        >
+                                                            {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p
-                                                className="truncate text-xs mt-0.5"
-                                                style={{ color: isActive ? "rgba(255,255,255,0.8)" : "#64748B" }}
+                                                className={`truncate text-xs mt-0.5 ${!isActive && conv.unreadCount > 0 ? "font-semibold" : ""}`}
+                                                style={{ color: isActive ? "rgba(255,255,255,0.8)" : (conv.unreadCount > 0 ? "#1E252B" : "#64748B") }}
                                             >
                                                 {conv.lastMessageBody ?? "No messages yet"}
                                             </p>

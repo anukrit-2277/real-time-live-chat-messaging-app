@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
@@ -14,10 +14,45 @@ export default function MessageInput({
 }) {
     const [text, setText] = useState("");
     const sendMessage = useMutation(api.messages.send);
+    const setTyping = useMutation(api.typing.setTyping);
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Fire typing=true on each keystroke, then typing=false after 2s of inactivity
+    const handleTyping = useCallback(() => {
+        setTyping({
+            conversationId,
+            tokenIdentifier: senderTokenIdentifier,
+            isTyping: true,
+        });
+
+        // Clear any existing timeout
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
+        // Set typing=false after 2 seconds of no keystrokes
+        typingTimeoutRef.current = setTimeout(() => {
+            setTyping({
+                conversationId,
+                tokenIdentifier: senderTokenIdentifier,
+                isTyping: false,
+            });
+        }, 2000);
+    }, [conversationId, senderTokenIdentifier, setTyping]);
 
     const handleSend = async () => {
         const trimmed = text.trim();
         if (!trimmed) return;
+
+        // Clear typing status immediately on send
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        setTyping({
+            conversationId,
+            tokenIdentifier: senderTokenIdentifier,
+            isTyping: false,
+        });
 
         setText("");
         await sendMessage({
@@ -34,6 +69,13 @@ export default function MessageInput({
         }
     };
 
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setText(e.target.value);
+        if (e.target.value.trim()) {
+            handleTyping();
+        }
+    };
+
     return (
         <div
             className="border-t border-white/20 px-4 py-3 relative z-10"
@@ -43,10 +85,10 @@ export default function MessageInput({
                 <input
                     type="text"
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-xl border border-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 shadow-sm"
+                    className="flex-1 rounded-xl border border-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm"
                     style={{
                         background: "rgba(255, 255, 255, 0.8)",
                         color: "#1E252B",

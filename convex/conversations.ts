@@ -94,6 +94,27 @@ export const list = query({
 
                 const lastMessage = messages[0] ?? null;
 
+                // Compute unread count
+                const readEntry = await ctx.db
+                    .query("readStatus")
+                    .withIndex("by_conversation_user", (q) =>
+                        q
+                            .eq("conversationId", conv._id)
+                            .eq("userId", currentUser._id)
+                    )
+                    .unique();
+
+                const lastReadTime = readEntry?.lastReadTime ?? 0;
+                const allMessages = await ctx.db
+                    .query("messages")
+                    .withIndex("by_conversation", (q) =>
+                        q.eq("conversationId", conv._id)
+                    )
+                    .collect();
+                const unreadCount = allMessages.filter(
+                    (m) => m._creationTime > lastReadTime && m.senderId !== currentUser._id
+                ).length;
+
                 const now = Date.now();
 
                 return {
@@ -104,6 +125,7 @@ export const list = query({
                     otherUserLastSeen: otherUser.lastSeen ?? null,
                     lastMessageBody: lastMessage?.body ?? null,
                     lastMessageTime: lastMessage?._creationTime ?? conv._creationTime,
+                    unreadCount,
                 };
             })
         );
