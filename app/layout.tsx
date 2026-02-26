@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "LiveChat",
-  description: "Real-time live chat messaging app",
+  title: "TarsChat",
+  description: "TarsChat - Real-time messaging powered by Convex",
 };
 
 export default function RootLayout({

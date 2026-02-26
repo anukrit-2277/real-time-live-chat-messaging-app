@@ -16,6 +16,7 @@ export default function Sidebar({
     selectedConversationId: Id<"conversations"> | null;
 }) {
     const [search, setSearch] = useState("");
+    const [searchFocused, setSearchFocused] = useState(false);
 
     // Get existing conversations
     const conversations =
@@ -31,12 +32,13 @@ export default function Sidebar({
 
     const createOrGet = useMutation(api.conversations.createOrGet);
 
-    // Filter users by search term
+    // Show user list when search bar is focused; filter by name when typing
+    const showUserList = searchFocused || search.length > 0;
     const filteredUsers = search
         ? users.filter((u) =>
             u.name.toLowerCase().includes(search.toLowerCase())
         )
-        : [];
+        : users;
 
     const handleUserClick = async (userId: Id<"users">) => {
         const conversationId = await createOrGet({
@@ -44,6 +46,7 @@ export default function Sidebar({
             otherUserId: userId,
         });
         setSearch("");
+        setSearchFocused(false);
         onSelectConversation(conversationId);
     };
 
@@ -59,6 +62,11 @@ export default function Sidebar({
                     placeholder="Search users..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => {
+                        // Delay hiding so click on user can register first
+                        setTimeout(() => setSearchFocused(false), 200);
+                    }}
                     className="w-full rounded-xl border border-white/30 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm"
                     style={{
                         background: "rgba(255, 255, 255, 0.8)",
@@ -68,8 +76,8 @@ export default function Sidebar({
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar px-3">
-                {/* Search results (only shown when typing) */}
-                {search && (
+                {/* User list (shown when search is focused or has text) */}
+                {showUserList && (
                     <div className="animate-fade-in">
                         <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748B" }}>
                             Users
@@ -117,8 +125,8 @@ export default function Sidebar({
                                         <p className="text-sm font-semibold truncate" style={{ color: "#1E252B" }}>
                                             {user.name}
                                         </p>
-                                        <p className="text-xs truncate" style={{ color: user.isOnline ? "#22c55e" : "#64748B" }}>
-                                            {user.isOnline ? "Online" : user.email}
+                                        <p className="text-xs truncate" style={{ color: user.isOnline ? "#22c55e" : "#94a3b8" }}>
+                                            {user.isOnline ? "Online" : `@${user.name.toLowerCase().replace(/\s+/g, "")}`}
                                         </p>
                                     </div>
                                 </button>
@@ -127,8 +135,8 @@ export default function Sidebar({
                     </div>
                 )}
 
-                {/* Conversation list (shown when not searching) */}
-                {!search && (
+                {/* Conversation list (hidden when user list is shown) */}
+                {!showUserList && (
                     <div>
                         <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wider" style={{ color: "#64748B" }}>
                             Conversations
@@ -233,22 +241,3 @@ export default function Sidebar({
     );
 }
 
-// Formats a lastSeen timestamp into a human-readable relative time
-function formatLastSeen(timestamp: number): string {
-    const now = Date.now();
-    const diff = now - timestamp;
-
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-
-    return new Date(timestamp).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-    });
-}

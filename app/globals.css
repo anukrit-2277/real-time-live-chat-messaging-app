@@ -162,3 +162,35 @@ select {
   border-radius: 50%;
   pointer-events: none;
 }
+
+/* Strip Clerk's default card chrome so it fits inside our custom container */
+.cl-card,
+.cl-signIn-root .cl-card,
+.cl-signUp-root .cl-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.cl-rootBox {
+  width: 100% !important;
+}
+
+.cl-cardBox {
+  width: 100% !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.cl-footer {
+  background: transparent !important;
+}
+
+/* Hide Next.js dev indicator */
+[data-nextjs-dialog-overlay],
+[data-nextjs-toast],
+nextjs-portal {
+  display: none !important;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
@@ -16,6 +16,20 @@ export default function MessageInput({
     const sendMessage = useMutation(api.messages.send);
     const setTyping = useMutation(api.typing.setTyping);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Cleanup: clear typing status when unmounting or switching conversations
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+            setTyping({
+                conversationId,
+                tokenIdentifier: senderTokenIdentifier,
+                isTyping: false,
+            });
+        };
+    }, [conversationId, senderTokenIdentifier, setTyping]);
 
     // Fire typing=true on each keystroke, then typing=false after 2s of inactivity
     const handleTyping = useCallback(() => {
