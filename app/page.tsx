@@ -108,7 +108,7 @@ export default function Home() {
       <div className="min-h-screen flex flex-col relative overflow-hidden">
 
         {/* === First Screen (full viewport) === */}
-        <div className="h-screen flex flex-col relative">
+        <div className="min-h-screen flex flex-col relative">
 
           {/* ── Navbar ── */}
           <nav
@@ -151,10 +151,10 @@ export default function Home() {
 
           {/* ── Hero section ── */}
           <div className="flex-1 flex items-center relative z-10 px-6 sm:px-10 lg:px-16 py-10 sm:py-16">
-            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-10 lg:gap-0 w-full max-w-6xl mx-auto">
+            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-0 w-full max-w-6xl mx-auto">
 
               {/* Left: Content */}
-              <div className="flex-1 max-w-xl animate-fade-in">
+              <div className="flex-1 max-w-xl animate-fade-in text-center lg:text-left">
                 <h1
                   className="text-4xl sm:text-5xl lg:text-[56px] font-bold leading-[1.1] tracking-tight mb-6"
                   style={{ color: "#1E252B" }}
@@ -171,7 +171,7 @@ export default function Home() {
                   never miss a conversation — all in one place.
                 </p>
 
-                <div className="flex flex-col items-start gap-3">
+                <div className="flex flex-col items-center lg:items-start gap-3">
                   <a
                     href="/auth"
                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl text-[15px] font-semibold text-white transition-all duration-200 ease-out hover:shadow-xl hover:-translate-y-0.5"
@@ -200,7 +200,7 @@ export default function Home() {
               </div>
 
               {/* Right: Decorative circles cluster */}
-              <div className="relative w-72 h-72 sm:w-80 sm:h-80 lg:w-[400px] lg:h-[400px] flex-shrink-0 hidden sm:block">
+              <div className="relative w-48 h-48 sm:w-72 sm:h-72 lg:w-[400px] lg:h-[400px] flex-shrink-0">
                 {/* Large main circle */}
                 <div
                   className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 sm:w-64 sm:h-64 lg:w-72 lg:h-72 rounded-full animate-float"
@@ -230,8 +230,8 @@ export default function Home() {
           <div className="floating-circle w-16 h-16 top-12 right-[30%] opacity-8 hidden lg:block" style={{ background: "linear-gradient(135deg, #cbd5e1, #94a3b8)" }} />
 
           {/* ── Feature cards ── */}
-          <div className="relative z-10 px-6 sm:px-10 lg:px-16 pb-8 animate-fade-in">
-            <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="relative z-10 px-4 sm:px-10 lg:px-16 pb-8 animate-fade-in">
+            <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
                 {
                   icon: (
