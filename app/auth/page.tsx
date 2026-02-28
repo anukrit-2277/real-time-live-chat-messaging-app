@@ -23,10 +23,13 @@ export default function AuthPage() {
             headerSubtitle: "text-slate-500 text-sm",
             formButtonPrimary:
                 "font-semibold text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-lg",
-            socialButtonsBlockButton: "hidden",
-            socialButtonsBlockButtonText: "hidden",
-            socialButtonsProviderIcon: "hidden",
-            dividerRow: "hidden",
+            socialButtonsRoot: { display: "none" },
+            socialButtonsBlockButton: { display: "none" },
+            socialButtonsBlockButtonText: { display: "none" },
+            socialButtonsProviderIcon: { display: "none" },
+            dividerRow: { display: "none" },
+            dividerLine: { display: "none" },
+            dividerText: { display: "none" },
             formFieldLabel: "text-slate-600 text-sm font-medium",
             formFieldInput:
                 "bg-white/80 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 rounded-lg shadow-sm",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect } from "react";
@@ -58,6 +58,28 @@ export default function Home() {
     }
   }, [selectedConversation, activeConversation?.lastMessageTime, user, markRead]);
 
+  // Track sign-out transition to avoid flashing landing page during re-renders
+  const [signingOut, setSigningOut] = useState(false);
+  const prevSignedIn = useRef(isSignedIn);
+  // Track whether the user was ever fully authenticated in this session
+  const wasAuthenticated = useRef(false);
+
+  useEffect(() => {
+    if (isSignedIn && currentUser) {
+      wasAuthenticated.current = true;
+    }
+  }, [isSignedIn, currentUser]);
+
+  useEffect(() => {
+    // User just went from signed-in to not-signed-in = signing out
+    if (prevSignedIn.current === true && !isSignedIn && isLoaded) {
+      setSigningOut(true);
+      const timer = setTimeout(() => setSigningOut(false), 500);
+      return () => clearTimeout(timer);
+    }
+    prevSignedIn.current = isSignedIn;
+  }, [isSignedIn, isLoaded]);
+
   // Sync user to Convex when signed in
   useEffect(() => {
     if (!isSignedIn || !user) {
@@ -97,12 +119,11 @@ export default function Home() {
     </div>
   );
 
-  // Wait for Clerk to load
-  if (!isLoaded) {
+  // Wait for Clerk to load, sign-out transition, or transient auth flicker
+  if (!isLoaded || signingOut || (wasAuthenticated.current && !isSignedIn)) {
     return <Loader />;
   }
 
-  // Not signed in -- landing page
   if (!isSignedIn) {
     return (
       <div className="min-h-screen flex flex-col relative overflow-hidden">
