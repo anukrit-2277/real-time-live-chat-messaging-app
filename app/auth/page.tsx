@@ -23,17 +23,16 @@ export default function AuthPage() {
             headerSubtitle: "text-slate-500 text-sm",
             formButtonPrimary:
                 "font-semibold text-white shadow-md hover:shadow-lg transition-all duration-200 rounded-lg",
-            socialButtonsBlockButton:
-                "bg-white/70 border border-slate-200 text-slate-700 hover:bg-white transition-all duration-200 shadow-sm rounded-lg",
-            socialButtonsBlockButtonText: "text-slate-600 font-medium text-sm",
+            socialButtonsBlockButton: "hidden",
+            socialButtonsBlockButtonText: "hidden",
+            socialButtonsProviderIcon: "hidden",
+            dividerRow: "hidden",
             formFieldLabel: "text-slate-600 text-sm font-medium",
             formFieldInput:
                 "bg-white/80 border-slate-200 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-200 rounded-lg shadow-sm",
             footerActionLink:
                 "text-sky-600 hover:text-sky-500 transition-colors duration-200 font-medium",
             footerActionText: "text-slate-500",
-            dividerLine: "bg-slate-200",
-            dividerText: "text-slate-400 text-xs",
             formFieldAction: "text-sky-600 hover:text-sky-500 text-sm",
             footer: "bg-transparent pt-2",
             identityPreviewEditButton: "text-sky-600 hover:text-sky-500",
@@ -43,7 +42,6 @@ export default function AuthPage() {
                 "bg-white/80 border-slate-200 text-slate-800 rounded-lg",
         },
         layout: {
-            socialButtonsPlacement: "bottom" as const,
             showOptionalFields: false,
         },
     };
