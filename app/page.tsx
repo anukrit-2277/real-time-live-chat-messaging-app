@@ -18,6 +18,7 @@ export default function Home() {
 
   const [selectedConversation, setSelectedConversation] =
     useState<Id<"conversations"> | null>(null);
+  const [showMembersModal, setShowMembersModal] = useState(false);
 
   // When a conversation is selected, mark it as read
   const handleSelectConversation = (conversationId: Id<"conversations">) => {
@@ -507,10 +508,21 @@ export default function Home() {
               </svg>
             </button>
             <div className="relative flex-shrink-0">
-              {activeConversation?.otherUserImage ? (
+              {activeConversation?.isGroup ? (
+                <div
+                  onClick={() => setShowMembersModal(true)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform duration-200"
+                  style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                  title="View members"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                  </svg>
+                </div>
+              ) : activeConversation?.otherUserImage ? (
                 <img
                   src={activeConversation.otherUserImage}
-                  alt={activeConversation.otherUserName}
+                  alt={activeConversation.otherUserName ?? "User"}
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
                 />
               ) : (
@@ -518,23 +530,25 @@ export default function Home() {
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
                   style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
                 >
-                  {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
+                  {(activeConversation?.otherUserName ?? "?").charAt(0).toUpperCase()}
                 </div>
               )}
-              {activeConversation?.otherUserIsOnline && (
+              {!activeConversation?.isGroup && activeConversation?.otherUserIsOnline && (
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
               )}
             </div>
             <div className="flex-1 overflow-hidden">
               <h2 className="text-sm font-semibold truncate" style={{ color: "#1E252B" }}>
-                {activeConversation?.otherUserName ?? "Chat"}
+                {activeConversation?.isGroup ? activeConversation.groupName : (activeConversation?.otherUserName ?? "Chat")}
               </h2>
-              <p className="text-xs truncate" style={{ color: activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8" }}>
-                {activeConversation?.otherUserIsOnline
-                  ? "Online"
-                  : activeConversation?.otherUserLastSeen
-                    ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
-                    : "Offline"}
+              <p className="text-xs truncate" style={{ color: activeConversation?.isGroup ? "#94a3b8" : (activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8") }}>
+                {activeConversation?.isGroup
+                  ? `${activeConversation.memberCount} members · ${activeConversation.membersOnline} online`
+                  : activeConversation?.otherUserIsOnline
+                    ? "Online"
+                    : activeConversation?.otherUserLastSeen
+                      ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
+                      : "Offline"}
               </p>
             </div>
           </div>
@@ -578,10 +592,21 @@ export default function Home() {
                 style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(12px)" }}
               >
                 <div className="relative flex-shrink-0">
-                  {activeConversation?.otherUserImage ? (
+                  {activeConversation?.isGroup ? (
+                    <div
+                      onClick={() => setShowMembersModal(true)}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-white cursor-pointer hover:scale-110 transition-transform duration-200"
+                      style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+                      title="View members"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                      </svg>
+                    </div>
+                  ) : activeConversation?.otherUserImage ? (
                     <img
                       src={activeConversation.otherUserImage}
-                      alt={activeConversation.otherUserName}
+                      alt={activeConversation.otherUserName ?? "User"}
                       className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
                     />
                   ) : (
@@ -589,23 +614,25 @@ export default function Home() {
                       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white"
                       style={{ background: "linear-gradient(135deg, #3C91C5, #5A7D95)" }}
                     >
-                      {activeConversation?.otherUserName?.charAt(0).toUpperCase() ?? "?"}
+                      {(activeConversation?.otherUserName ?? "?").charAt(0).toUpperCase()}
                     </div>
                   )}
-                  {activeConversation?.otherUserIsOnline && (
+                  {!activeConversation?.isGroup && activeConversation?.otherUserIsOnline && (
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
                   )}
                 </div>
                 <div>
                   <h2 className="text-base font-semibold" style={{ color: "#1E252B" }}>
-                    {activeConversation?.otherUserName ?? "Chat"}
+                    {activeConversation?.isGroup ? activeConversation.groupName : (activeConversation?.otherUserName ?? "Chat")}
                   </h2>
-                  <p className="text-xs" style={{ color: activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8" }}>
-                    {activeConversation?.otherUserIsOnline
-                      ? "Online"
-                      : activeConversation?.otherUserLastSeen
-                        ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
-                        : "Offline"}
+                  <p className="text-xs" style={{ color: activeConversation?.isGroup ? "#94a3b8" : (activeConversation?.otherUserIsOnline ? "#22c55e" : "#94a3b8") }}>
+                    {activeConversation?.isGroup
+                      ? `${activeConversation.memberCount} members · ${activeConversation.membersOnline} online`
+                      : activeConversation?.otherUserIsOnline
+                        ? "Online"
+                        : activeConversation?.otherUserLastSeen
+                          ? `Last seen ${formatLastSeen(activeConversation.otherUserLastSeen)}`
+                          : "Offline"}
                   </p>
                 </div>
               </div>
@@ -664,6 +691,59 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      {/* Group Members Modal */}
+      {showMembersModal && activeConversation?.isGroup && activeConversation.members && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+          <div
+            className="w-full max-w-sm mx-4 rounded-2xl shadow-2xl p-6 animate-fade-in"
+            style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: "#1E252B" }}>{activeConversation.groupName}</h3>
+                <p className="text-xs" style={{ color: "#94a3b8" }}>{activeConversation.memberCount} members · {activeConversation.membersOnline} online</p>
+              </div>
+              <button
+                onClick={() => setShowMembersModal(false)}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                style={{ color: "#94a3b8" }}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1 custom-scrollbar">
+              {activeConversation.members.map((member, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.5)" }}
+                >
+                  <div className="relative flex-shrink-0">
+                    {member.imageUrl ? (
+                      <img src={member.imageUrl} alt={member.name} className="w-9 h-9 rounded-full object-cover ring-1 ring-white shadow-sm" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold text-white" style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}>
+                        {member.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    {member.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: "#1E252B" }}>{member.name}</p>
+                    <p className="text-xs" style={{ color: member.isOnline ? "#22c55e" : "#94a3b8" }}>
+                      {member.isOnline ? "Online" : "Offline"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

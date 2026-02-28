@@ -12,12 +12,15 @@ export default defineSchema({
 
     conversations: defineTable({
         participants: v.array(v.id("users")),
+        name: v.optional(v.string()),
+        isGroup: v.optional(v.boolean()),
     }),
 
     messages: defineTable({
         conversationId: v.id("conversations"),
         senderId: v.id("users"),
         body: v.string(),
+        deleted: v.optional(v.boolean()),
     }).index("by_conversation", ["conversationId"]),
 
     // Tracks who is currently typing in which conversation
@@ -37,4 +40,13 @@ export default defineSchema({
         lastReadTime: v.number(),
     })
         .index("by_conversation_user", ["conversationId", "userId"]),
+
+    // Tracks emoji reactions on messages
+    reactions: defineTable({
+        messageId: v.id("messages"),
+        userId: v.id("users"),
+        emoji: v.string(),
+    })
+        .index("by_message", ["messageId"])
+        .index("by_message_user", ["messageId", "userId"]),
 });

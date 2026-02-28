@@ -45,8 +45,48 @@ export const createOrGet = mutation({
     },
 });
 
+// Creates a new group conversation with multiple members.
+export const createGroup = mutation({
+    args: {
+        currentUserTokenIdentifier: v.string(),
+        name: v.string(),
+        memberIds: v.array(v.id("users")),
+    },
+    handler: async (ctx, args) => {
+        const currentUser = await ctx.db
+            .query("users")
+            .withIndex("by_token", (q) =>
+                q.eq("tokenIdentifier", args.currentUserTokenIdentifier)
+            )
+            .unique();
+
+        if (!currentUser) {
+            throw new Error("Current user not found in database");
+        }
+
+        if (args.memberIds.length < 1) {
+            throw new Error("Group must have at least one other member");
+        }
+
+        if (!args.name.trim()) {
+            throw new Error("Group name is required");
+        }
+
+        // Include the creator in the participants
+        const participants = [currentUser._id, ...args.memberIds];
+
+        const conversationId = await ctx.db.insert("conversations", {
+            participants,
+            name: args.name.trim(),
+            isGroup: true,
+        });
+
+        return conversationId;
+    },
+});
+
 // Returns all conversations the current user is part of,
-// with the other participant's info and the last message preview.
+// with participant info and the last message preview.
 export const list = query({
     args: { tokenIdentifier: v.string() },
     handler: async (ctx, args) => {
@@ -67,22 +107,9 @@ export const list = query({
             conv.participants.includes(currentUser._id)
         );
 
-        // For each conversation, get the other user's info and the last message
+        // For each conversation, get participant info and last message
         const conversationsWithDetails = await Promise.all(
             myConversations.map(async (conv) => {
-                // Find the other participant
-                const otherUserId = conv.participants.find(
-                    (id) => id !== currentUser._id
-                );
-                const otherUser = otherUserId
-                    ? await ctx.db.get(otherUserId)
-                    : null;
-
-                // Skip conversations where the other user was deleted
-                if (!otherUser) {
-                    return null;
-                }
-
                 // Get the last message in this conversation
                 const messages = await ctx.db
                     .query("messages")
@@ -117,13 +144,78 @@ export const list = query({
 
                 const now = Date.now();
 
+                // ----- Group conversation -----
+                if (conv.isGroup) {
+                    // Get info for all members
+                    const memberInfos = await Promise.all(
+                        conv.participants.map(async (pid) => {
+                            const u = await ctx.db.get(pid);
+                            return u
+                                ? {
+                                    _id: u._id,
+                                    name: u.name,
+                                    imageUrl: u.imageUrl,
+                                    isOnline: u.lastSeen ? now - u.lastSeen < 60000 : false,
+                                }
+                                : null;
+                        })
+                    );
+
+                    const validMembers = memberInfos.filter((m) => m !== null);
+
+                    return {
+                        _id: conv._id,
+                        isGroup: true as const,
+                        groupName: conv.name ?? "Group",
+                        memberCount: validMembers.length,
+                        memberImages: validMembers.slice(0, 3).map((m) => m.imageUrl),
+                        membersOnline: validMembers.filter((m) => m.isOnline).length,
+                        members: validMembers.map((m) => ({
+                            name: m.name,
+                            imageUrl: m.imageUrl,
+                            isOnline: m.isOnline,
+                        })),
+                        // For the sidebar these aren't used, but we keep them
+                        // null so the type is consistent
+                        otherUserName: conv.name ?? "Group",
+                        otherUserImage: null as string | null,
+                        otherUserIsOnline: false,
+                        otherUserLastSeen: null as number | null,
+                        lastMessageBody: lastMessage?.deleted
+                            ? "This message was deleted"
+                            : (lastMessage?.body ?? null),
+                        lastMessageTime:
+                            lastMessage?._creationTime ?? conv._creationTime,
+                        unreadCount,
+                    };
+                }
+
+                // ----- DM conversation -----
+                const otherUserId = conv.participants.find(
+                    (id) => id !== currentUser._id
+                );
+                const otherUser = otherUserId
+                    ? await ctx.db.get(otherUserId)
+                    : null;
+
+                // Skip conversations where the other user was deleted
+                if (!otherUser) {
+                    return null;
+                }
+
                 return {
                     _id: conv._id,
+                    isGroup: false as const,
+                    groupName: null as string | null,
+                    memberCount: 2,
+                    memberImages: null as string[] | null,
+                    membersOnline: 0,
+                    members: null as { name: string; imageUrl: string; isOnline: boolean }[] | null,
                     otherUserName: otherUser.name,
                     otherUserImage: otherUser.imageUrl,
                     otherUserIsOnline: otherUser.lastSeen ? now - otherUser.lastSeen < 60000 : false,
                     otherUserLastSeen: otherUser.lastSeen ?? null,
-                    lastMessageBody: lastMessage?.body ?? null,
+                    lastMessageBody: lastMessage?.deleted ? "This message was deleted" : (lastMessage?.body ?? null),
                     lastMessageTime: lastMessage?._creationTime ?? conv._creationTime,
                     unreadCount,
                 };

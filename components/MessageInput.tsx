@@ -31,6 +31,9 @@ export default function MessageInput({
         };
     }, [conversationId, senderTokenIdentifier, setTyping]);
 
+    const [sendError, setSendError] = useState<string | null>(null);
+    const [failedMessage, setFailedMessage] = useState<string | null>(null);
+
     // Fire typing=true on each keystroke, then typing=false after 2s of inactivity
     const handleTyping = useCallback(() => {
         setTyping({
@@ -54,9 +57,12 @@ export default function MessageInput({
         }, 2000);
     }, [conversationId, senderTokenIdentifier, setTyping]);
 
-    const handleSend = async () => {
-        const trimmed = text.trim();
+    const handleSend = async (retryBody?: string) => {
+        const trimmed = retryBody ?? text.trim();
         if (!trimmed) return;
+
+        setSendError(null);
+        setFailedMessage(null);
 
         // Clear typing status immediately on send
         if (typingTimeoutRef.current) {
@@ -68,12 +74,18 @@ export default function MessageInput({
             isTyping: false,
         });
 
-        setText("");
-        await sendMessage({
-            conversationId,
-            senderTokenIdentifier,
-            body: trimmed,
-        });
+        if (!retryBody) setText("");
+
+        try {
+            await sendMessage({
+                conversationId,
+                senderTokenIdentifier,
+                body: trimmed,
+            });
+        } catch {
+            setSendError("Failed to send message");
+            setFailedMessage(trimmed);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -95,6 +107,21 @@ export default function MessageInput({
             className="border-t border-white/20 px-4 py-3 relative z-10"
             style={{ background: "rgba(255, 255, 255, 0.6)", backdropFilter: "blur(12px)" }}
         >
+            {/* Error bar with retry */}
+            {sendError && (
+                <div
+                    className="flex items-center justify-between mb-2 px-3 py-2 rounded-lg text-xs animate-fade-in"
+                    style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", color: "#dc2626" }}
+                >
+                    <span>⚠ {sendError}</span>
+                    <button
+                        onClick={() => failedMessage && handleSend(failedMessage)}
+                        className="font-semibold px-2 py-0.5 rounded-md transition-colors hover:bg-red-100"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
             <div className="flex items-center gap-3">
                 <input
                     type="text"
@@ -109,7 +136,7 @@ export default function MessageInput({
                     }}
                 />
                 <button
-                    onClick={handleSend}
+                    onClick={() => handleSend()}
                     disabled={!text.trim()}
                     className="rounded-xl px-5 py-2.5 text-sm text-white font-semibold transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                     style={{ background: "linear-gradient(135deg, #3C91C5 0%, #5A7D95 100%)" }}
